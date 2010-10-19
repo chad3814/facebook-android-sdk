@@ -81,7 +81,7 @@ public class Example extends Activity {
         SessionStore.restore(mFacebook, this);
         SessionEvents.addAuthListener(new SampleAuthListener());
         SessionEvents.addLogoutListener(new SampleLogoutListener());
-        mLoginButton.init(mFacebook, PERMISSIONS);
+        mLoginButton.init(mFacebook, PERMISSIONS, APP_ID);
         
         mRequestButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {

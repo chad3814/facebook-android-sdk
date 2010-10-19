@@ -48,7 +48,7 @@ public class LoginButton extends ImageButton {
         super(context, attrs, defStyle);
     }
     
-    public void init(final Facebook fb, final String[] permissions) {
+    public void init(final Facebook fb, final String[] permissions, String appID) {
         mFb = fb;
         mPermissions = permissions;
         mHandler = new Handler();
@@ -62,10 +62,14 @@ public class LoginButton extends ImageButton {
         
         SessionEvents.addAuthListener(mSessionListener);
         SessionEvents.addLogoutListener(mSessionListener);
-        setOnClickListener(new ButtonOnClickListener());
+        setOnClickListener(new ButtonOnClickListener(appID));
     }
     
     private final class ButtonOnClickListener implements OnClickListener {
+        private String mAppID;
+        public ButtonOnClickListener(String appID) {
+        	mAppID = appID;
+        }
         
         public void onClick(View arg0) {
             if (mFb.isSessionValid()) {
@@ -73,7 +77,7 @@ public class LoginButton extends ImageButton {
                 AsyncFacebookRunner asyncRunner = new AsyncFacebookRunner(mFb);
                 asyncRunner.logout(getContext(), new LogoutRequestListener());
             } else {
-                mFb.authorize(getContext(), Example.APP_ID, mPermissions,
+                mFb.authorize(getContext(), mAppID, mPermissions,
                         new LoginDialogListener());
             }
         }
