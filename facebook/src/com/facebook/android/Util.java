@@ -47,6 +47,8 @@ import android.webkit.CookieSyncManager;
  */
 public final class Util {
 
+	public static final String endLine = "\r\n";
+	
     /**
      * Generate the multi-part post body providing the parameters and boundary
      * string
@@ -60,13 +62,13 @@ public final class Util {
         StringBuilder sb = new StringBuilder();
         
         for (String key : parameters.keySet()) {
-            if (parameters.getByteArray(key) != null) {
+        	if (parameters.get(key) instanceof byte[]) {
         	    continue;
             }
         	
-            sb.append("Content-Disposition: form-data; name=\"" + key + 
-            		"\"\r\n\r\n" + parameters.getString(key));
-            sb.append("\r\n" + "--" + boundary + "\r\n");
+            sb.append(endLine + "Content-Disposition: form-data; name=\"" + key + 
+            		"\"" + endLine + endLine + parameters.getString(key));
+            sb.append(endLine + "--" + boundary);
         }
         
         return sb.toString();
@@ -80,8 +82,10 @@ public final class Util {
         StringBuilder sb = new StringBuilder();
         boolean first = true;
         for (String key : parameters.keySet()) {
-            if (first) first = false; else sb.append("&");
-            sb.append(key + "=" + parameters.getString(key));
+        	if (parameters.get(key) instanceof String) {
+        		if (first) first = false; else sb.append("&");
+        		sb.append(key + "=" + parameters.getString(key));
+        	}
         }
         return sb.toString();
     }
@@ -135,7 +139,6 @@ public final class Util {
           throws MalformedURLException, IOException {
     	// random string as boundary for multi-part http post
     	String strBoundary = "3i2ndDfv2rTHiSisAbouNdArYfORhtTPEefj3q2f";
-    	String endLine = "\r\n";
    
     	OutputStream os;
 
@@ -150,7 +153,7 @@ public final class Util {
         if (!method.equals("GET")) {
             Bundle dataparams = new Bundle();
             for (String key : params.keySet()) {
-                if (params.getByteArray(key) != null) {
+            	if (params.get(key) instanceof byte[]) {
                         dataparams.putByteArray(key, params.getByteArray(key));
                 }
             }
@@ -172,21 +175,20 @@ public final class Util {
             conn.setRequestProperty("Connection", "Keep-Alive");
             conn.connect();
             os = new BufferedOutputStream(conn.getOutputStream());
-            
-            os.write(("--" + strBoundary +endLine).getBytes());
+            os.write(("--" + strBoundary).getBytes());
             os.write((encodePostBody(params, strBoundary)).getBytes());
-            os.write((endLine + "--" + strBoundary + endLine).getBytes());
             
             if (!dataparams.isEmpty()) {
             	
                 for (String key: dataparams.keySet()){
-                    os.write(("Content-Disposition: form-data; filename=\"" + key + "\"" + endLine).getBytes());
-                    os.write(("Content-Type: content/unknown" + endLine + endLine).getBytes());
+                    os.write((endLine + "Content-Disposition: form-data; name=\"" + key + "\"; filename=\"" + key + "\"" + endLine + endLine).getBytes());
+                    //os.write(("Content-Type: application/octet-stream" + endLine + endLine).getBytes());
                     os.write(dataparams.getByteArray(key));
-                    os.write((endLine + "--" + strBoundary + endLine).getBytes());
-
+                    os.write((endLine + "--" + strBoundary).getBytes());
                 }          	
             }
+            // finish the last boundary line with --
+            os.write(("--" + endLine).getBytes());
             os.flush();
         }
         
