@@ -18,7 +18,7 @@ package com.facebook.android;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 
 import android.Manifest;
 import android.content.Context;
@@ -155,12 +155,12 @@ public class Facebook {
      *            should be the same context in which the login occurred in
      *            order to clear any stored cookies
      * @throws IOException 
-     * @throws MalformedURLException 
+     * @throws URISyntaxException
      * @return JSON string representation of the auth.expireSession response 
      *            ("true" if successful)
      */
     public String logout(Context context) 
-          throws MalformedURLException, IOException {
+          throws IOException, URISyntaxException {
         Util.clearCookies(context);
         Bundle b = new Bundle();
         b.putString("method", "auth.expireSession");
@@ -192,14 +192,14 @@ public class Facebook {
      *            documentation: one of the parameters must be "method".
      * @throws IOException 
      *            if a network error occurs
-     * @throws MalformedURLException 
+     * @throws URISyntaxException 
      *            if accessing an invalid endpoint
      * @throws IllegalArgumentException
      *            if one of the parameters is not "method"
      * @return JSON string representation of the response
      */
     public String request(Bundle parameters) 
-          throws MalformedURLException, IOException {
+          throws IOException, URISyntaxException {
         if (!parameters.containsKey("method")) {
             throw new IllegalArgumentException("API method must be specified. "
                     + "(parameters must contain key \"method\" and value). See"
@@ -221,11 +221,11 @@ public class Facebook {
      *            about the currently logged authenticated user, provide "me",
      *            which will fetch http://graph.facebook.com/me
      * @throws IOException 
-     * @throws MalformedURLException
+     * @throws URISyntaxException 
      * @return JSON string representation of the response
      */
     public String request(String graphPath) 
-          throws MalformedURLException, IOException {
+          throws IOException, URISyntaxException {
         return request(graphPath, new Bundle(), "GET");
     }
     
@@ -248,18 +248,17 @@ public class Facebook {
      *            following graph resource:
      *            https://graph.facebook.com/search?q=facebook
      * @throws IOException 
-     * @throws MalformedURLException 
+     * @throws URISyntaxException 
      * @return JSON string representation of the response
      */
     public String request(String graphPath, Bundle parameters) 
-          throws MalformedURLException, IOException {
+          throws IOException, URISyntaxException {
         return request(graphPath, parameters, "GET");
     }
     
     /**
      * Synchronously make a request to the Facebook Graph API with the given
-     * HTTP method and string parameters. Note that binary data parameters 
-     * (e.g. pictures) are not yet supported by this helper function.
+     * HTTP method and string parameters.
      * 
      * See http://developers.facebook.com/docs/api
      *  
@@ -278,13 +277,45 @@ public class Facebook {
      * @param httpMethod
      *            http verb, e.g. "GET", "POST", "DELETE"
      * @throws IOException 
-     * @throws MalformedURLException 
+     * @throws URISyntaxException 
      * @return JSON string representation of the response
      */
     public String request(String graphPath,
                           Bundle parameters, 
                           String httpMethod) 
-          throws FileNotFoundException, MalformedURLException, IOException {
+          throws FileNotFoundException, IOException, URISyntaxException {
+        return new String(requestBinary(graphPath, parameters, httpMethod));
+    }
+
+    /**
+     * Synchronously make a request to the Facebook Graph API with the given
+     * HTTP method and string parameters. Use this method if you need to
+     * retrieve binary data (e.g. pictures)
+     * 
+     * See http://developers.facebook.com/docs/api
+     *  
+     * Note that this method blocks waiting for a network response, so do not 
+     * call it in a UI thread.
+     * 
+     * @param graphPath
+     *            Path to resource in the Facebook graph, e.g., to fetch data
+     *            about the currently logged authenticated user, provide "me",
+     *            which will fetch http://graph.facebook.com/me
+     * @param parameters
+     *            key-value string parameters, e.g. the path "search" with
+     *            parameters {"q" : "facebook"} would produce a query for the
+     *            following graph resource:
+     *            https://graph.facebook.com/search?q=facebook
+     * @param httpMethod
+     *            http verb, e.g. "GET", "POST", "DELETE"
+     * @throws IOException 
+     * @throws URISyntaxException 
+     * @return Binary server response
+     */
+    public byte[] requestBinary(String graphPath,
+                          Bundle parameters, 
+                          String httpMethod) 
+          throws FileNotFoundException, IOException, URISyntaxException {
         parameters.putString("format", "json");
         parameters.putString("sdk", "android");
         if (isSessionValid()) {
